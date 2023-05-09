@@ -1,16 +1,18 @@
 package com.myapp.springmvcsecurityuserregistration.controller;
 
 
+import com.myapp.springmvcsecurityuserregistration.entity.User;
 import com.myapp.springmvcsecurityuserregistration.service.UserService;
 import com.myapp.springmvcsecurityuserregistration.user.WebUser;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.logging.Logger;
 
@@ -39,6 +41,40 @@ public class RegistrationController {
     public String showMyLoginPage(Model theModel) {
         theModel.addAttribute("webUser", new WebUser());
         return "register/registration-form";
+    }
+
+    @PostMapping("/processRegistrationForm")
+    public String processRegistrationForm(
+            @Valid @ModelAttribute("webUser") WebUser theWebUser,
+            HttpSession session, BindingResult theBindingResult,
+            Model theModel) {
+
+        String userName = theWebUser.getUserName();
+        logger.info("Processing registration form for: " + userName);
+
+        // form validation
+        if(theBindingResult.hasErrors()) {
+            return "register/registration-form";
+        }
+
+        // check the database if user already exists
+        User existing = userService.findByUserName(userName);
+        if(existing != null) {
+            theModel.addAttribute("webUser", new WebUser());
+            theModel.addAttribute("registrationError", "User name already exists.");
+
+            logger.warning("User name already exists.");
+            return "register/registration-form";
+        }
+
+        // create user account and store in the database
+        userService.save(theWebUser);
+
+        logger.info("Successfully created user: " + userName);
+
+        // Place user in the web http session for later use
+        session.setAttribute("user", theWebUser);
+        return "register/registration-confirmation";
     }
 }
 
