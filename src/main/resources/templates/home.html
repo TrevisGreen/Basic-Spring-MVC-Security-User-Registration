@@ -12,6 +12,13 @@
     <p>Welcome to Your Company Home Page!</p>
     <hr>
 
+    <!-- display username and role(s) -->
+    <p>
+        User: <span sec:authentication="principal.username"></span>
+        <br><br>
+        Role(s): <span sec:authentication="principal.authorities"></span>
+    </p>
+
 
   </body>
 </html>
